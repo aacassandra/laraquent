@@ -73,13 +73,20 @@ class BeautyEloquent
             $request = $request->get()->first();
             $status = BeautyEloquentTools::arr2Json($request);
             if ($status) {
-                $response = BeautyEloquentTools::arr2Json([
-                    'status' => true,
-                    'output' => null
-                ]);
-
-                $response->output = $request;
-                return $response;
+                if (isset($options['json']) && $options['json'] === true) {
+                    return BeautyEloquentTools::arr2Json([
+                        'status' => true,
+                        'output' => $request
+                    ]);
+                } else {
+                    $response = BeautyEloquentTools::arr2Json([
+                        'status' => true,
+                        'output' => null
+                    ]);
+    
+                    $response->output = $request;
+                    return $response;
+                }
             } else {
                 return BeautyEloquentTools::arr2Json([
                     'status' => false
@@ -89,13 +96,20 @@ class BeautyEloquent
             $request = $request->get();
             $status = BeautyEloquentTools::arr2Json($request);
             if (isset($status) && count($status)) {
-                $response = BeautyEloquentTools::arr2Json([
-                    'status' => true,
-                    'output' => null
-                ]);
+                if (isset($options['json']) && $options['json'] === true) {
+                    return BeautyEloquentTools::arr2Json([
+                        'status' => true,
+                        'output' => $request
+                    ]);
+                } else {
+                    $response = BeautyEloquentTools::arr2Json([
+                        'status' => true,
+                        'output' => null
+                    ]);
 
-                $response->output = $request;
-                return $response;
+                    $response->output = $request;
+                    return $response;
+                }
             } else {
                 return BeautyEloquentTools::arr2Json([
                     'status' => false
