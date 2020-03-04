@@ -1,0 +1,17 @@
+{
+  "name": "alauddincassandra/laraquent",
+  "description": "Save your time with Laraquent, for CRUD your laravel project with MySQL DB",
+  "type": "composer-plugin",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "aacassandra",
+      "email": "alauddinafifcassandra@programmer.net"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Laraquent\\": "src/"
+    }
+  }
+}
