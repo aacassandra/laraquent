@@ -1,5 +1,5 @@
 {
-  "name": "alauddincassandra/laraquent",
+  "name": "aacassandra/laraquent",
   "description": "Save your time with Laraquent, for CRUD your laravel project with MySQL DB",
   "type": "composer-plugin",
   "license": "MIT",
