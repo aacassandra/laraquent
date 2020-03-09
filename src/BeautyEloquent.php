@@ -17,7 +17,7 @@ class BeautyEloquent
     */
     public function Create($table, $data=[])
     {
-        $table = 'App\\'.$table;
+        $table = 'App\\'.ucfirst($table);
         $request = new $table;
         foreach ($data as $key => $value) {
             $columnName = $value[0];
@@ -39,7 +39,7 @@ class BeautyEloquent
      */
     public function Read($table='', $options=[])
     {
-        $table = 'App\\'.$table;
+        $table = 'App\\'.ucfirst($table);
         $request = new $table;
 
         $finalWhere = [];
@@ -132,7 +132,7 @@ class BeautyEloquent
      */
     public function Update($table='', $data=[], $options=[])
     {
-        $table = 'App\\'.$table;
+        $table = 'App\\'.ucfirst($table);
         $request = new $table;
 
         $finalWhere = [];
@@ -191,7 +191,7 @@ class BeautyEloquent
      */
     public function Delete($table='', $options=[])
     {
-        $table = 'App\\'.$table;
+        $table = 'App\\'.ucfirst($table);
         $request = new $table;
 
         $finalWhere = [];
