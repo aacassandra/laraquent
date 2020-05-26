@@ -7,17 +7,17 @@ use Laraquent\BeautyEloquentTools;
 class BeautyEloquent
 {
     /** $data = [
-    *     ['name', 'create new'],
-    *     ['email', 'asdad123@2asd.com'],
-    *     ['phone', 12313],
-    *     ['role', 'create new'],
-    *     ['password', 'asdasdad']
-    * ];
-    * $user = $this->API->Create('user', $data);
-    */
-    public function Create($table, $data=[])
+     *     ['name', 'create new'],
+     *     ['email', 'asdad123@2asd.com'],
+     *     ['phone', 12313],
+     *     ['role', 'create new'],
+     *     ['password', 'asdasdad']
+     * ];
+     * $user = $this->API->Create('user', $data);
+     */
+    public function Create($table, $data = [])
     {
-        $table = 'App\\'.ucfirst($table);
+        $table = 'App\\' . ucfirst($table);
         $request = new $table;
         foreach ($data as $key => $value) {
             $columnName = $value[0];
@@ -37,9 +37,9 @@ class BeautyEloquent
      *              'first' => true
      *           ]);
      */
-    public function Read($table='', $options=[])
+    public function Read($table = '', $options = [])
     {
-        $table = 'App\\'.ucfirst($table);
+        $table = 'App\\' . ucfirst($table);
         $request = new $table;
 
         $finalWhere = [];
@@ -52,9 +52,9 @@ class BeautyEloquent
         if (isset($options['where']) && count($options['where'])) {
             foreach ($options['where'] as $key => $value) {
                 if (isset($value[3]) && $value[3] === 'or') {
-                    array_push($finalOrWhere, [$value[0],$value[1],$value[2]]);
+                    array_push($finalOrWhere, [$value[0], $value[1], $value[2]]);
                 } else {
-                    array_push($finalWhere, [$value[0],$value[1],$value[2]]);
+                    array_push($finalWhere, [$value[0], $value[1], $value[2]]);
                 }
             }
         }
@@ -83,7 +83,7 @@ class BeautyEloquent
                         'status' => true,
                         'output' => null
                     ]);
-    
+
                     $response->output = $request;
                     return $response;
                 }
@@ -130,9 +130,9 @@ class BeautyEloquent
      *              'id' => ''
      *          ]);
      */
-    public function Update($table='', $data=[], $options=[])
+    public function Update($table = '', $data = [], $options = [])
     {
-        $table = 'App\\'.ucfirst($table);
+        $table = 'App\\' . ucfirst($table);
         $request = new $table;
 
         $finalWhere = [];
@@ -145,9 +145,9 @@ class BeautyEloquent
         if (isset($options['where']) && count($options['where'])) {
             foreach ($options['where'] as $key => $value) {
                 if (isset($value[3]) && $value[3] === 'or') {
-                    array_push($finalOrWhere, [$value[0],$value[1],$value[2]]);
+                    array_push($finalOrWhere, [$value[0], $value[1], $value[2]]);
                 } else {
-                    array_push($finalWhere, [$value[0],$value[1],$value[2]]);
+                    array_push($finalWhere, [$value[0], $value[1], $value[2]]);
                 }
             }
         }
@@ -189,9 +189,9 @@ class BeautyEloquent
      *              'id' => ''
      *          ]);
      */
-    public function Delete($table='', $options=[])
+    public function Delete($table = '', $options = [])
     {
-        $table = 'App\\'.ucfirst($table);
+        $table = 'App\\' . ucfirst($table);
         $request = new $table;
 
         $finalWhere = [];
@@ -204,9 +204,9 @@ class BeautyEloquent
         if (isset($options['where']) && count($options['where'])) {
             foreach ($options['where'] as $key => $value) {
                 if (isset($value[3]) && $value[3] === 'or') {
-                    array_push($finalOrWhere, [$value[0],$value[1],$value[2]]);
+                    array_push($finalOrWhere, [$value[0], $value[1], $value[2]]);
                 } else {
-                    array_push($finalWhere, [$value[0],$value[1],$value[2]]);
+                    array_push($finalWhere, [$value[0], $value[1], $value[2]]);
                 }
             }
         }
@@ -220,30 +220,51 @@ class BeautyEloquent
                 $request = $request->orWhere($value[0], $value[1], $value[2]);
             }
         }
+        $check = $request->get();
+        $check = json_encode($check);
+        $check = json_decode($check);
+        if (count($check) >= 1) {
+            $request = $request->delete();
 
-        $request = $request->delete();
-
-        //Check status
-        $status = new $table;
-        foreach ($finalWhere as $key => $value) {
-            $status = $status->where($value[0], $value[1], $value[2]);
-        }
-
-        if (isset($finalOrWhere) && count($finalOrWhere)) {
-            foreach ($finalOrWhere as $key => $value) {
-                $status = $status->orWhere($value[0], $value[1], $value[2]);
+            //Check status
+            $status = new $table;
+            foreach ($finalWhere as $key => $value) {
+                $status = $status->where($value[0], $value[1], $value[2]);
             }
-        }
 
-        $status = $status->get();
-        $status = BeautyEloquentTools::arr2Json($status);
-        if (isset($status) && count($status)) {
-            return BeautyEloquentTools::arr2Json([
-                'status' => false
-            ]);
+            if (isset($finalOrWhere) && count($finalOrWhere)) {
+                foreach ($finalOrWhere as $key => $value) {
+                    $status = $status->orWhere($value[0], $value[1], $value[2]);
+                }
+            }
+
+            $status = $status->get();
+            $status = BeautyEloquentTools::arr2Json($status);
+            if (isset($status) && count($status)) {
+                $fail = 0;
+                foreach ($status as $sts) {
+                    if ($sts->id === $options['id']) {
+                        $fail = $fail + 1;
+                    }
+                }
+
+                if ($fail <= 0) {
+                    return BeautyEloquentTools::arr2Json([
+                        'status' => true
+                    ]);
+                } else {
+                    return BeautyEloquentTools::arr2Json([
+                        'status' => false
+                    ]);
+                }
+            } else {
+                return BeautyEloquentTools::arr2Json([
+                    'status' => true
+                ]);
+            }
         } else {
             return BeautyEloquentTools::arr2Json([
-                'status' => true
+                'status' => false
             ]);
         }
     }
