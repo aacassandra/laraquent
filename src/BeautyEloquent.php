@@ -33,7 +33,10 @@ class BeautyEloquent
      *  $users = $this->API->Read('user', [
      *              'where' => [
      *                  ['role','=','admin'],
+     *                  [...] //and more
      *              ],
+     *              'orderBy' => ['id', 'DESC'],
+     *              'limit' => 2,
      *              'first' => true
      *           ]);
      */
@@ -44,6 +47,10 @@ class BeautyEloquent
 
         $finalWhere = [];
         $finalOrWhere = [];
+
+        if (isset($options['id']) && $options['id']) {
+            array_push($finalWhere, ['id', '=', $options['id']]);
+        }
 
         if (isset($options['id']) && $options['id']) {
             array_push($finalWhere, ['id', '=', $options['id']]);
@@ -67,6 +74,14 @@ class BeautyEloquent
             foreach ($finalOrWhere as $key => $value) {
                 $request = $request->orWhere($value[0], $value[1], $value[2]);
             }
+        }
+
+        if (isset($options['orderBy']) && count($options['orderBy']) >= 1) {
+            $request = $request->orderBy($options['orderBy'][0], $options['orderBy'][1]);
+        }
+
+        if (isset($options['limit']) && $options['limit']) {
+            $request = $request->limit($options['limit']);
         }
 
         if (isset($options['first']) && $options['first']) {
