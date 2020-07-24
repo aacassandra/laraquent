@@ -35,9 +35,26 @@ class BeautyEloquent
      *                  ['role','=','admin'],
      *                  [...] //and more
      *              ],
-     *              'orderBy' => ['id', 'DESC'],
+     *              'orWhere' => [
+     *                  ['role','=','admin'],
+     *                  [...] //and more
+     *              ],
+     *              'whereJsonContains' => [
+     *                  ['slug->en', 'article-part-2'],
+     *                  [...] //and more
+     *              ],
+     *              'whereRaw' => [
+     *                  ['price > IF(state = "TX", ?, 100)', [200]],
+     *                  [...] //and more
+     *              ],
+     *              'orWhereRaw' => [
+     *                  ['price > IF(state = "TX", ?, 100)', [200]],
+     *                  [...] //and more
+     *              ]
+     *              'orderBy' => ['id', 'DESC'], //ASC or DESC
      *              'limit' => 2,
-     *              'first' => true
+     *              'first' => true //if the result has a return value of 1 and no more and return json objects,
+     *              'paginate' => [3, 'home'] //{x, y} : x => the amount of content to be displayed, y : pageName for multi pagination (optional)
      *           ]);
      */
     public function Read($table = '', $options = [])
@@ -47,34 +64,106 @@ class BeautyEloquent
 
         $finalWhere = [];
         $finalOrWhere = [];
+        $finalWhereJsonContains = [];
+        $finalWhereRaw = [];
+        $finalOrWhereRaw = [];
 
         if (isset($options['id']) && $options['id']) {
             array_push($finalWhere, ['id', '=', $options['id']]);
         }
 
-        if (isset($options['id']) && $options['id']) {
-            array_push($finalWhere, ['id', '=', $options['id']]);
-        }
-
+        // Where
         if (isset($options['where']) && count($options['where'])) {
             foreach ($options['where'] as $key => $value) {
-                if (isset($value[3]) && $value[3] === 'or') {
-                    array_push($finalOrWhere, [$value[0], $value[1], $value[2]]);
-                } else {
+                if (count($value) === 3) {
                     array_push($finalWhere, [$value[0], $value[1], $value[2]]);
+                }
+            }
+
+            if (isset($finalWhere) && count($finalWhere)) {
+                foreach ($finalWhere as $key => $value) {
+                    $request = $request->where($value[0], $value[1], $value[2]);
                 }
             }
         }
 
-        foreach ($finalWhere as $key => $value) {
-            $request = $request->where($value[0], $value[1], $value[2]);
-        }
+        // Or Where
+        if (isset($options['OrWhere']) && count($options['OrWhere'])) {
+            foreach ($options['OrWhere'] as $key => $value) {
+                if (count($value) === 3) {
+                    array_push($finalOrWhere, [$value[0], $value[1], $value[2]]);
+                }
+            }
 
-        if (isset($finalOrWhere) && count($finalOrWhere)) {
-            foreach ($finalOrWhere as $key => $value) {
-                $request = $request->orWhere($value[0], $value[1], $value[2]);
+            if (isset($finalOrWhere) && count($finalOrWhere)) {
+                foreach ($finalOrWhere as $key => $value) {
+                    $request = $request->orWhere($value[0], $value[1], $value[2]);
+                }
             }
         }
+
+        // Where Json Contains
+        if (isset($options['whereJsonContains']) && count($options['whereJsonContains'])) {
+            foreach ($options['whereJsonContains'] as $key => $value) {
+                if (count($value) === 2) {
+                    array_push($finalWhereJsonContains, [$value[0], $value[1]]);
+                }
+            }
+
+            if (isset($finalWhereJsonContains) && count($finalWhereJsonContains)) {
+                foreach ($finalWhereJsonContains as $key => $value) {
+                    $request = $request->whereJsonContains($value[0], $value[1]);
+                }
+            }
+        }
+
+        // Where Raw
+        if (isset($options['whereRaw']) && count($options['whereRaw'])) {
+            foreach ($options['whereRaw'] as $key => $value) {
+                if (count($value) >= 1) {
+                    if (isset($value[1])) {
+                        array_push($finalWhereRaw, [$value[0], $value[1]]);
+                    } else {
+                        array_push($finalWhereRaw, [$value[0]]);
+                    }
+                }
+            }
+
+            if (isset($finalWhereRaw) && count($finalWhereRaw)) {
+                foreach ($finalWhereRaw as $key => $value) {
+                    if (isset($value[1])) {
+                        $request = $request->whereRaw($value[0], $value[1]);
+                    } else {
+                        $request = $request->whereRaw($value[0]);
+                    }
+                }
+            }
+        }
+
+        // Or Where Raw
+        if (isset($options['orWhereRaw']) && count($options['orWhereRaw'])) {
+            foreach ($options['orWhereRaw'] as $key => $value) {
+                if (count($value) >= 1) {
+                    if (isset($value[1])) {
+                        array_push($finalOrWhereRaw, [$value[0], $value[1]]);
+                    } else {
+                        array_push($finalOrWhereRaw, [$value[0]]);
+                    }
+                }
+            }
+
+            if (isset($finalOrWhereRaw) && count($finalOrWhereRaw)) {
+                foreach ($finalOrWhereRaw as $key => $value) {
+                    if (isset($value[1])) {
+                        $request = $request->orWhereRaw($value[0], $value[1]);
+                    } else {
+                        $request = $request->orWhereRaw($value[0]);
+                    }
+                }
+            }
+        }
+
+        // ----------------------
 
         if (isset($options['orderBy']) && count($options['orderBy']) >= 1) {
             $request = $request->orderBy($options['orderBy'][0], $options['orderBy'][1]);
@@ -108,8 +197,19 @@ class BeautyEloquent
                 ]);
             }
         } else {
-            $request = $request->get();
-            $status = BeautyEloquentTools::arr2Json($request);
+            $status = [];
+            if (isset($options['paginate']) && $options['paginate'][0] >= 2) {
+                if (isset($options['paginate'][1])) {
+                    $request = $request->paginate($options['paginate'][0], ['*'], $options['paginate'][1]);
+                } else {
+                    $request = $request->paginate($options['paginate'][0]);
+                }
+                $status = $request->items();
+            } else {
+                $request = $request->get();
+                $status = BeautyEloquentTools::arr2Json($request);
+            }
+
             if (isset($status) && count($status)) {
                 if (isset($options['json']) && $options['json'] === true) {
                     return BeautyEloquentTools::arr2Json([
