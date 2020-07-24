@@ -69,7 +69,7 @@ class BeautyEloquent
         $finalOrWhereRaw = [];
 
         if (isset($options['id']) && $options['id']) {
-            array_push($finalWhere, ['id', '=', $options['id']]);
+            $request = $request->where('id', '=', $options['id']);
         }
 
         // Where
