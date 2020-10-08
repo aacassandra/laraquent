@@ -15,18 +15,36 @@ class BeautyEloquent
      * ];
      * $user = $this->API->Create('user', $data);
      */
-    public function Create($table, $data = [])
+    public static function Model()
     {
-        $table = 'App\\' . ucfirst($table);
+        return config('laraquent.model.directory');
+    }
+
+    public static function Create($table, $data = [])
+    {
+        if (is_string($table)) {
+            $table = BeautyEloquent::Model() . '\\' . $table;
+        }
+
         $request = new $table;
-        foreach ($data as $key => $value) {
+        foreach ($data as $value) {
             $columnName = $value[0];
             $request->$columnName = $value[1];
         }
         $request->save();
-        return BeautyEloquentTools::arr2Json([
-            'status' => true
-        ]);
+        $template = BeautyEloquentTools::ResponseTemplate();
+        $template->status = true;
+        $template->output = $request;
+
+        if (config('laraquent.failure.checking') === false) {
+            if ($template->status) {
+                return $template->output;
+            } else {
+                return null;
+            }
+        } else {
+            return $template;
+        }
     }
 
     /**
@@ -57,9 +75,12 @@ class BeautyEloquent
      *              'paginate' => [3, 'home'] //{x, y} : x => the amount of content to be displayed, y : pageName for multi pagination (optional)
      *           ]);
      */
-    public function Read($table = '', $options = [])
+    public static function Read($table = '', $options = [])
     {
-        $table = 'App\\' . ucfirst($table);
+        if (is_string($table)) {
+            $table = BeautyEloquent::Model() . '\\' . $table;
+        }
+
         $request = new $table;
 
         $finalWhere = [];
@@ -67,6 +88,10 @@ class BeautyEloquent
         $finalWhereJsonContains = [];
         $finalWhereRaw = [];
         $finalOrWhereRaw = [];
+
+        if (isset($options['join']) && count($options['join']) >= 3) {
+            $request = $request->join($options['join'][0], $options['join'][1], $options['join'][2], $options['join'][3]);
+        }
 
         if (isset($options['id']) && $options['id']) {
             $request = $request->where('id', '=', $options['id']);
@@ -173,28 +198,36 @@ class BeautyEloquent
             $request = $request->limit($options['limit']);
         }
 
-        if (isset($options['first']) && $options['first']) {
+        $template = BeautyEloquentTools::ResponseTemplate();
+        if (isset($options['pluck']) && count($options['pluck']) >= 1) {
+            if (count($options['pluck']) === 1) {
+                $status = $request->pluck($options['pluck'][0])->all();
+            } else if (count($options['pluck']) === 2) {
+                $status = $request->pluck($options['pluck'][0], $options['pluck'][1])->all();
+            }
+
+
+            if (isset($status) && count($status)) {
+                $template->status = true;
+                $template->output = $status;
+            } else {
+                $template->status = false;
+                $template->output = $status;
+            }
+        } else if (isset($options['first']) && $options['first']) {
             $request = $request->get()->first();
             $status = BeautyEloquentTools::arr2Json($request);
             if ($status) {
                 if (isset($options['json']) && $options['json'] === true) {
-                    return BeautyEloquentTools::arr2Json([
-                        'status' => true,
-                        'output' => $request
-                    ]);
+                    $template->status = true;
+                    $template->output = BeautyEloquentTools::arr2Json($request);
                 } else {
-                    $response = BeautyEloquentTools::arr2Json([
-                        'status' => true,
-                        'output' => null
-                    ]);
-
-                    $response->output = $request;
-                    return $response;
+                    $template->status = true;
+                    $template->output = $request;
                 }
             } else {
-                return BeautyEloquentTools::arr2Json([
-                    'status' => false
-                ]);
+                $template->status = false;
+                $template->output = $request;
             }
         } else {
             $status = [];
@@ -212,24 +245,26 @@ class BeautyEloquent
 
             if (isset($status) && count($status)) {
                 if (isset($options['json']) && $options['json'] === true) {
-                    return BeautyEloquentTools::arr2Json([
-                        'status' => true,
-                        'output' => $request
-                    ]);
+                    $template->status = true;
+                    $template->output = BeautyEloquentTools::arr2Json($request);
                 } else {
-                    $response = BeautyEloquentTools::arr2Json([
-                        'status' => true,
-                        'output' => null
-                    ]);
-
-                    $response->output = $request;
-                    return $response;
+                    $template->status = true;
+                    $template->output = $request;
                 }
             } else {
-                return BeautyEloquentTools::arr2Json([
-                    'status' => false
-                ]);
+                $template->status = false;
+                $template->output = $request;
             }
+        }
+
+        if (config('laraquent.failure.checking') === false) {
+            if ($template->status) {
+                return $template->output;
+            } else {
+                return [];
+            }
+        } else {
+            return $template;
         }
     }
 
@@ -245,9 +280,12 @@ class BeautyEloquent
      *              'id' => ''
      *          ]);
      */
-    public function Update($table = '', $data = [], $options = [])
+    public static function Update($table = '', $data = [], $options = [])
     {
-        $table = 'App\\' . ucfirst($table);
+        if (is_string($table)) {
+            $table = BeautyEloquent::Model() . '\\' . $table;
+        }
+
         $request = new $table;
 
         $finalWhere = [];
@@ -279,34 +317,52 @@ class BeautyEloquent
 
         $status = $request->get();
         $status = BeautyEloquentTools::arr2Json($status);
-        if (isset($status) && count($status) && isset($data) && count($data)) {
-            $finalData = [];
-            foreach ($data as $key => $value) {
-                $finalData[$value[0]] = $value[1];
+        $template = BeautyEloquentTools::ResponseTemplate();
+        if (isset($status) && count($status)) {
+            if (isset($data) && count($data)) {
+                $finalData = [];
+                foreach ($data as $key => $value) {
+                    $finalData[$value[0]] = $value[1];
+                }
+                $request = $request->update($finalData);
+                $template->status = true;
+                $template->output = $request;
+            } else {
+                $template->status = false;
+                $template->output = 'Please insert data';
             }
-            $request = $request->update($finalData);
-            return BeautyEloquentTools::arr2Json([
-                'status' => true
-            ]);
         } else {
-            return BeautyEloquentTools::arr2Json([
-                'status' => false
-            ]);
+            $template->status = false;
+            $template->output = $request;
+        }
+
+        if (config('laraquent.failure.checking') === false) {
+            if ($template->status) {
+                return $template->output;
+            } else {
+                return null;
+            }
+        } else {
+            return $template;
         }
     }
 
     /**
      * $users = $this->API->Delete('user', [
      *              'where' => [
-     *                  ['role','=','user','or']
+     *                  ['role','=','user']
+     *                  [...] //and more
      *              ],
      *              'orwhere => [],
      *              'id' => ''
      *          ]);
      */
-    public function Delete($table = '', $options = [])
+    public static function Delete($table = '', $options = [])
     {
-        $table = 'App\\' . ucfirst($table);
+        if (is_string($table)) {
+            $table = BeautyEloquent::Model() . '\\' . $table;
+        }
+
         $request = new $table;
 
         $finalWhere = [];
@@ -338,6 +394,7 @@ class BeautyEloquent
         $check = $request->get();
         $check = json_encode($check);
         $check = json_decode($check);
+        $template = BeautyEloquentTools::ResponseTemplate();
         if (count($check) >= 1) {
             $request = $request->delete();
 
@@ -364,23 +421,251 @@ class BeautyEloquent
                 }
 
                 if ($fail <= 0) {
-                    return BeautyEloquentTools::arr2Json([
-                        'status' => true
-                    ]);
+                    $template->status = true;
                 } else {
-                    return BeautyEloquentTools::arr2Json([
-                        'status' => false
-                    ]);
+                    $template->status = false;
                 }
             } else {
-                return BeautyEloquentTools::arr2Json([
-                    'status' => true
-                ]);
+                $template->status = true;
             }
         } else {
-            return BeautyEloquentTools::arr2Json([
-                'status' => false
-            ]);
+            $template->status = false;
         }
+
+        $template->output = $request;
+
+        if (config('laraquent.failure.checking') === false) {
+            if ($template->status) {
+                return $template->output;
+            } else {
+                return null;
+            }
+        } else {
+            return $template;
+        }
+    }
+
+    /**
+     * Retrieve all roles
+     */
+    public static function Roles($options = [])
+    {
+        $model = config('laraquent.model.role');
+        return BeautyEloquent::Read(new $model, $options);
+    }
+
+    /**
+     * Add new role
+     * $permissions = [
+     *     0 => "1"
+     *     1 => "2"
+     *     2 => "3"
+     *     3 => "4"
+     *     4 => "8"
+     * ]
+     */
+    public static function CreateRole($name, $permissions = [])
+    {
+        $model = config('laraquent.model.role');
+        $table = new $model;
+        $role = $table->create(['name' => $name]);
+        if (isset($permissions) && count($permissions) >= 1) {
+            $role->givePermissionTo($permissions);
+        }
+        $template = BeautyEloquentTools::ResponseTemplate();
+        $template->status = true;
+        $template->output = $role;
+
+        if (config('laraquent.failure.checking') === false) {
+            if ($template->status) {
+                return $template->output;
+            } else {
+                return null;
+            }
+        } else {
+            return $template;
+        }
+    }
+
+    /**
+     * Edit specific role by id
+     * $permissions = [
+     *     0 => "1"
+     *     1 => "2"
+     *     2 => "3"
+     *     3 => "4"
+     *     4 => "8"
+     * ]
+     */
+    public static function UpdateRole($id, $name, $permissions = [])
+    {
+        $model = config('laraquent.model.role');
+        $table = new $model;
+        $role = $table->find($id);
+        $template = BeautyEloquentTools::ResponseTemplate();
+        if ($role !== null) {
+            $role->name = $name;
+            $role->save();
+            if (isset($permissions) && count($permissions) >= 1) {
+                $role->syncPermissions($permissions);
+            }
+            $template->status = true;
+            $template->output = $role;
+        } else {
+            $template->status = false;
+            $template->output = 'Role not found';
+        }
+
+        if (config('laraquent.failure.checking') === false) {
+            return $template->output;
+        } else {
+            return $template;
+        }
+    }
+
+    /**
+     * Delete specific role by id
+     */
+    public static function DeleteRole($id)
+    {
+        $model = config('laraquent.model.role');
+        $table = new $model;
+        $role = $table->find($id);
+        $template = BeautyEloquentTools::ResponseTemplate();
+        if ($role !== null) {
+            $role->delete();
+            $template->status = true;
+            $template->output = $role;
+        } else {
+            $template->status = false;
+            $template->output = 'Role not found';
+        }
+
+        if (config('laraquent.failure.checking') === false) {
+            return $template->output;
+        } else {
+            return $template;
+        }
+    }
+
+    /**
+     * Retrieve all permissions
+     */
+    public static function Permissions($options = [])
+    {
+        $model = config('laraquent.model.permission');
+        return BeautyEloquent::Read(new $model, $options);
+    }
+
+    /**
+     * Get specific user by id
+     */
+    public static function User($id)
+    {
+        $model = config('laraquent.model.user');
+        return BeautyEloquent::Read(new $model, [
+            'id' => $id,
+            'first' => true
+        ]);
+    }
+
+    /**
+     * $data = $request->all();
+     * make sure all request data including the password has been hashed
+     * 
+     * $roles = [
+     *      0 => "Admin"
+     *      1 => "User"
+     * ]
+     */
+    public static function CreateUser($data, $roles = [])
+    {
+        $model = config('laraquent.model.user');
+        $table = new $model;
+        $user = $table->create($data);
+        if (isset($roles) && count($roles) >= 1) {
+            $user->assignRole($roles);
+        }
+        $template = BeautyEloquentTools::ResponseTemplate();
+        $template->status = true;
+        $template->output = $user;
+
+        if (config('laraquent.failure.checking') === false) {
+            if ($template->status) {
+                return $template->output;
+            } else {
+                return null;
+            }
+        } else {
+            return $template;
+        }
+    }
+
+    /**
+     * Edit specific user by id
+     * $data = $request->all();
+     * 
+     * $roles = [
+     *      0 => "Admin"
+     *      1 => "User"
+     * ]
+     */
+    public static function UpdateUser($id, $data, $roles = [])
+    {
+        $model = config('laraquent.model.user');
+        $table = new $model;
+        $user = $table->find($id);
+        $template = BeautyEloquentTools::ResponseTemplate();
+        if ($user !== null) {
+            $user->update($data);
+            if (isset($roles) && count($roles) >= 1) {
+                $user->syncRoles($roles);
+            }
+            $template->status = true;
+            $template->output = $user;
+        } else {
+            $template->status = false;
+            $template->output = 'User not found';
+        }
+
+        if (config('laraquent.failure.checking') === false) {
+            return $template->output;
+        } else {
+            return $template;
+        }
+    }
+
+    /**
+     * Delete specific user by id
+     */
+    public static function DeleteUser($id)
+    {
+        $model = config('laraquent.model.user');
+        $table = new $model;
+        $user = $table->find($id);
+        $template = BeautyEloquentTools::ResponseTemplate();
+        if ($user !== null) {
+            $user->delete();
+            $template->status = true;
+            $template->output = $user;
+        } else {
+            $template->status = false;
+            $template->output = 'User not found';
+        }
+
+        if (config('laraquent.failure.checking') === false) {
+            return $template->output;
+        } else {
+            return $template;
+        }
+    }
+
+    /**
+     * Retrieve all users
+     */
+    public static function Users($options = [])
+    {
+        $model = config('laraquent.model.user');
+        return BeautyEloquent::Read(new $model, $options);
     }
 }
