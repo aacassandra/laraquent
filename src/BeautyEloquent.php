@@ -497,14 +497,13 @@ class BeautyEloquent
      *     4 => "8"
      * ]
      */
-    public static function UpdateRole($id, $name, $permissions = [])
+    public static function UpdateRole($id, $permissions = [])
     {
         $model = config('laraquent.model.role');
         $table = new $model;
         $role = $table->find($id);
         $template = BeautyEloquentTools::ResponseTemplate();
         if ($role !== null) {
-            $role->name = $name;
             $role->save();
             if (isset($permissions) && count($permissions) >= 1) {
                 $role->syncPermissions($permissions);
