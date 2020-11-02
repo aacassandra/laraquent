@@ -270,8 +270,8 @@ class BeautyEloquent
 
     /**
      * $users = $this->API->Update('user',[
-     *                  ['name', 'Jhon'],
-     *                  ['age', 26]
+     *                  'name' => 'Jhon',
+     *                  'age' => 26
      *              ] ,[
      *              'where' => [
      *                  ['role','=','user','or']
@@ -320,11 +320,7 @@ class BeautyEloquent
         $template = BeautyEloquentTools::ResponseTemplate();
         if (isset($status) && count($status)) {
             if (isset($data) && count($data)) {
-                $finalData = [];
-                foreach ($data as $key => $value) {
-                    $finalData[$value[0]] = $value[1];
-                }
-                $request = $request->update($finalData);
+                $request = $request->update($data);
                 $template->status = true;
                 $template->output = $request;
             } else {
