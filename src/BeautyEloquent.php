@@ -27,9 +27,8 @@ class BeautyEloquent
         }
 
         $request = new $table;
-        foreach ($data as $value) {
-            $columnName = $value[0];
-            $request->$columnName = $value[1];
+        foreach ($data as $key => $value) {
+            $request->$key = $value;
         }
         $request->save();
         $template = BeautyEloquentTools::ResponseTemplate();
