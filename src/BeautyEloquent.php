@@ -88,8 +88,12 @@ class BeautyEloquent
         $finalWhereRaw = [];
         $finalOrWhereRaw = [];
 
-        if (isset($options['join']) && count($options['join']) >= 3) {
-            $request = $request->join($options['join'][0], $options['join'][1], $options['join'][2], $options['join'][3]);
+        if (isset($options['join']) && count($options['join']) >= 1) {
+            foreach ($options['join'] as $value) {
+                if (count($value) >= 4) {
+                    $request = $request->join($value[0], $value[1], $value[2], $value[3]);
+                }
+            }
         }
 
         if (isset($options['id']) && $options['id']) {
