@@ -116,8 +116,8 @@ class BeautyEloquent
         }
 
         // Or Where
-        if (isset($options['OrWhere']) && count($options['OrWhere'])) {
-            foreach ($options['OrWhere'] as $key => $value) {
+        if (isset($options['orWhere']) && count($options['orWhere'])) {
+            foreach ($options['orWhere'] as $key => $value) {
                 if (count($value) === 3) {
                     array_push($finalOrWhere, [$value[0], $value[1], $value[2]]);
                 }
@@ -279,7 +279,7 @@ class BeautyEloquent
      *              'where' => [
      *                  ['role','=','user','or']
      *              ],
-     *              'orwhere => [],
+     *              'orWhere => [],
      *              'id' => ''
      *          ]);
      */
@@ -298,23 +298,33 @@ class BeautyEloquent
             array_push($finalWhere, ['id', '=', $options['id']]);
         }
 
+        // Where
         if (isset($options['where']) && count($options['where'])) {
             foreach ($options['where'] as $key => $value) {
-                if (isset($value[3]) && $value[3] === 'or') {
-                    array_push($finalOrWhere, [$value[0], $value[1], $value[2]]);
-                } else {
+                if (count($value) === 3) {
                     array_push($finalWhere, [$value[0], $value[1], $value[2]]);
+                }
+            }
+
+            if (isset($finalWhere) && count($finalWhere)) {
+                foreach ($finalWhere as $key => $value) {
+                    $request = $request->where($value[0], $value[1], $value[2]);
                 }
             }
         }
 
-        foreach ($finalWhere as $key => $value) {
-            $request = $request->where($value[0], $value[1], $value[2]);
-        }
+        // Or Where
+        if (isset($options['orWhere']) && count($options['orWhere'])) {
+            foreach ($options['orWhere'] as $key => $value) {
+                if (count($value) === 3) {
+                    array_push($finalOrWhere, [$value[0], $value[1], $value[2]]);
+                }
+            }
 
-        if (isset($finalOrWhere) && count($finalOrWhere)) {
-            foreach ($finalOrWhere as $key => $value) {
-                $request = $request->orWhere($value[0], $value[1], $value[2]);
+            if (isset($finalOrWhere) && count($finalOrWhere)) {
+                foreach ($finalOrWhere as $key => $value) {
+                    $request = $request->orWhere($value[0], $value[1], $value[2]);
+                }
             }
         }
 
@@ -352,7 +362,7 @@ class BeautyEloquent
      *                  ['role','=','user']
      *                  [...] //and more
      *              ],
-     *              'orwhere => [],
+     *              'orWhere => [],
      *              'id' => ''
      *          ]);
      */
@@ -371,25 +381,36 @@ class BeautyEloquent
             $request = $request->where('id', $options['id']);
         }
 
+        // Where
         if (isset($options['where']) && count($options['where'])) {
             foreach ($options['where'] as $key => $value) {
-                if (isset($value[3]) && $value[3] === 'or') {
-                    array_push($finalOrWhere, [$value[0], $value[1], $value[2]]);
-                } else {
+                if (count($value) === 3) {
                     array_push($finalWhere, [$value[0], $value[1], $value[2]]);
+                }
+            }
+
+            if (isset($finalWhere) && count($finalWhere)) {
+                foreach ($finalWhere as $key => $value) {
+                    $request = $request->where($value[0], $value[1], $value[2]);
                 }
             }
         }
 
-        foreach ($finalWhere as $key => $value) {
-            $request = $request->where($value[0], $value[1], $value[2]);
-        }
+        // Or Where
+        if (isset($options['orWhere']) && count($options['orWhere'])) {
+            foreach ($options['orWhere'] as $key => $value) {
+                if (count($value) === 3) {
+                    array_push($finalOrWhere, [$value[0], $value[1], $value[2]]);
+                }
+            }
 
-        if (isset($finalOrWhere) && count($finalOrWhere)) {
-            foreach ($finalOrWhere as $key => $value) {
-                $request = $request->orWhere($value[0], $value[1], $value[2]);
+            if (isset($finalOrWhere) && count($finalOrWhere)) {
+                foreach ($finalOrWhere as $key => $value) {
+                    $request = $request->orWhere($value[0], $value[1], $value[2]);
+                }
             }
         }
+
         $check = $request->get();
         $check = json_encode($check);
         $check = json_decode($check);
