@@ -279,7 +279,7 @@ class BeautyEloquent
      *              'where' => [
      *                  ['role','=','user','or']
      *              ],
-     *              'orWhere => [],
+     *              'orwhere => [],
      *              'id' => ''
      *          ]);
      */
@@ -295,7 +295,7 @@ class BeautyEloquent
         $finalOrWhere = [];
 
         if (isset($options['id']) && $options['id']) {
-            array_push($finalWhere, ['id', '=', $options['id']]);
+            $request = $request->where('id', '=', $options['id']);
         }
 
         // Where
@@ -362,7 +362,7 @@ class BeautyEloquent
      *                  ['role','=','user']
      *                  [...] //and more
      *              ],
-     *              'orWhere => [],
+     *              'orwhere => [],
      *              'id' => ''
      *          ]);
      */
@@ -378,7 +378,7 @@ class BeautyEloquent
         $finalOrWhere = [];
 
         if (isset($options['id']) && $options['id']) {
-            $request = $request->where('id', $options['id']);
+            $request = $request->where('id', '=', $options['id']);
         }
 
         // Where
