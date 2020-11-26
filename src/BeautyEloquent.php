@@ -484,11 +484,19 @@ class BeautyEloquent
      *     4 => "8"
      * ]
      */
-    public static function CreateRole($name, $permissions = [])
+    public static function CreateRole($name, $permissions = [], $guardName = '')
     {
         $model = config('laraquent.model.role');
         $table = new $model;
-        $role = $table->create(['name' => $name]);
+        $dataRole = [
+            'name' => $name
+        ];
+
+        if ($guardName !== '') {
+            $dataRole['guard_name'] = $guardName;
+        }
+
+        $role = $table->create($dataRole);
         if (isset($permissions) && count($permissions) >= 1) {
             $role->givePermissionTo($permissions);
         }
