@@ -533,9 +533,7 @@ class BeautyEloquent
         $template = BeautyEloquentTools::ResponseTemplate();
         if ($role !== null) {
             $role->save();
-            if (isset($permissions) && count($permissions) >= 1) {
-                $role->syncPermissions($permissions);
-            }
+            $role->syncPermissions($permissions);
             $template->status = true;
             $template->output = $role;
         } else {
